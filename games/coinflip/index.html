@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>pudge Coinflip</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Delius&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <div class="sidebar">
+      <div class="balance">
+        <img src="img/crystal.png" alt="💰" style="width: 1em; height: 1em; vertical-align: middle;">
+        <span id="balance">100.00</span>₽
+      </div>
+
+      <div class="bet-section">
+        <input id="betInput" type="number" value="10" min="1"/>
+        <div class="bet-controls">
+          <button onclick="halveBet()">/2</button>
+          <button onclick="doubleBet()">x2</button>
+        </div>
+      </div>
+
+      <div class="choice-buttons">
+        <button id="headsBtn" onclick="makeChoice('heads')">Heads</button>
+        <button id="tailsBtn" onclick="makeChoice('tails')">Tails</button>
+      </div>
+
+      <div class="series-section">
+        <div class="multipliers" id="multiplierContainer"></div>
+        <button class="withdraw" onclick="withdraw()">Withdraw <span id="winnings">0.00</span>₽</button>
+      </div>
+
+      <div class="history" id="history"></div>
+    </div>
+
+    <div class="coin-container">
+      <div class="coin" id="coin">
+        <img id="coinImage" src="img/crystal.png" alt="Coin Side" />
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
