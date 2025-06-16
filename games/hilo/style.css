@@ -1,0 +1,49 @@
+body {
+  background: #111;
+  color: #0f0;
+  font-family: monospace;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.game {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+.option {
+  width: 150px;
+  text-align: center;
+  background: #222;
+  padding: 10px;
+  border: 2px solid #0f0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.card-container {
+  text-align: center;
+}
+
+.card {
+  font-size: 100px;
+  margin: 20px 0;
+}
+
+button {
+  padding: 10px 20px;
+  background: #0f0;
+  color: #000;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.balance {
+  margin-bottom: 10px;
+  font-size: 18px;
+}

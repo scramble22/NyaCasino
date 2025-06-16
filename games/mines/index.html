@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minesweeper Game</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+    body {
+      background: radial-gradient(circle, #1e1e2f, #252542);
+      font-family: 'Roboto', sans-serif;
+      color: #fff;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .game-container {
+      background: #2b2b3d;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 90%;
+      max-width: 500px;
+    }
+
+    .settings {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .settings div {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .settings label {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .settings input {
+      padding: 10px;
+      background: #3d3d5c;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      text-align: center;
+      font-size: 1rem;
+    }
+
+    .balance {
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .balance span {
+      font-weight: bold;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 60px);
+      gap: 5px;
+      margin: 20px 0;
+    }
+
+    .cell {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(145deg, #3a3a5c, #2d2d46);
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+    }
+
+    .cell:hover {
+      transform: scale(1.1);
+      background: #505072;
+    }
+
+    .cell.revealed {
+      background: #6f6fc2;
+      pointer-events: none;
+    }
+
+    .cell.mine {
+      background: #d9534f;
+      color: #fff;
+    }
+
+    .cell.safe {
+      background: #4caf50;
+      color: #fff;
+    }
+
+    .multiplier-bar {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+      width: 100%;
+    }
+
+    .multiplier {
+      padding: 10px;
+      background: #3d3d5c;
+      border-radius: 10px;
+      text-align: center;
+      flex: 1;
+      margin: 0 5px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+
+    .multiplier.active {
+      background: #6f6fc2;
+      color: #fff;
+    }
+
+    .button {
+      padding: 12px 24px;
+      background: linear-gradient(145deg, #6f6fc2, #5858a5);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    .button:hover {
+      background: linear-gradient(145deg, #8a8ad6, #7070b2);
+      transform: scale(1.05);
+    }
+
+    .message {
+      margin-top: 20px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <div class="settings">
+      <div>
+        <label for="bombs">Bombs</label>
+        <input type="number" id="bombs" min="1" max="24" value="5">
+      </div>
+      <div>
+        <label for="bet">Bet</label>
+        <input type="number" id="bet" min="1" value="10">
+      </div>
+    </div>
+    <div class="balance">
+      <div>Balance: <span id="balance">100.00</span></div>
+      <div>Earnings: <span id="earnings">0.00</span></div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <button class="button" id="startStopGame">Start Game</button>
+    <div class="message" id="message">Welcome to Minesweeper!</div>
+  </div>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const startStopGameButton = document.getElementById('startStopGame');
+    const balanceDisplay = document.getElementById('balance');
+    const earningsDisplay = document.getElementById('earnings');
+    const message = document.getElementById('message');
+
+    let cells = [];
+    let mines = [];
+    let bet = 0;
+    let balance = 100;
+    let revealedCells = 0;
+    let multipliers = [];
+    let earnings = 0;
+    let gameInProgress = false;
+
+    function createGrid() {
+      grid.innerHTML = '';
+      cells = [];
+      for (let i = 0; i < 25; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.dataset.index = i;
+        cell.addEventListener('click', () => revealCell(i));
+        grid.appendChild(cell);
+        cells.push(cell);
+      }
+    }
+
+    function generateMines(numberOfBombs) {
+      mines = new Set();
+      while (mines.size < numberOfBombs) {
+        mines.add(Math.floor(Math.random() * 25));
+      }
+    }
+
+    function revealCell(index) {
+      if (!gameInProgress) return;
+
+      const cell = cells[index];
+      if (mines.has(index)) {
+        cell.classList.add('mine', 'revealed');
+        message.textContent = 'You hit a mine! Game over!';
+        endGame(false);
+        return;
+      }
+      cell.classList.add('safe', 'revealed');
+      revealedCells++;
+      earnings = (bet * (1.1 + revealedCells * 0.15)).toFixed(2);
+      earningsDisplay.textContent = earnings;
+
+      if (revealedCells === 25 - mines.size) {
+        message.textContent = 'Congratulations! You cleared the grid!';
+        endGame(true);
+      }
+    }
+
+    function startGame() {
+      const betInput = document.getElementById('bet');
+      const bombsInput = document.getElementById('bombs');
+
+      bet = parseFloat(betInput.value);
+      const numberOfBombs = parseInt(bombsInput.value);
+
+      if (!bet || !numberOfBombs || bet <= 0 || numberOfBombs <= 0 || numberOfBombs >= 25 || bet > balance) {
+        message.textContent = 'Invalid bet or number of bombs.';
+        return;
+      }
+
+      balance -= bet;
+      balanceDisplay.textContent = balance.toFixed(2);
+
+      revealedCells = 0;
+      earnings = 0;
+      earningsDisplay.textContent = earnings;
+      generateMines(numberOfBombs);
+      createGrid();
+      gameInProgress = true;
+      startStopGameButton.textContent = 'Stop Game';
+      message.textContent = 'Game in progress. Good luck!';
+    }
+
+    function endGame(won) {
+      gameInProgress = false;
+      if (won) {
+        balance += parseFloat(earnings);
+        balanceDisplay.textContent = balance.toFixed(2);
+        message.textContent = 'You won! Earnings added to your balance.';
+      }
+      startStopGameButton.textContent = 'Start Game';
+    }
+
+    startStopGameButton.addEventListener('click', () => {
+      if (gameInProgress) {
+        message.textContent = 'Game stopped. Earnings added to your balance!';
+        endGame(true);
+      } else {
+        startGame();
+      }
+    });
+
+    createGrid();
+  </script>
+</body>
+</html>

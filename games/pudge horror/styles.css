@@ -1,0 +1,229 @@
+body {
+  margin: 0;
+  background: #0f111a;
+  font-family: Arial, sans-serif;
+  color: #fff;
+}
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Полоска с шансами сверху */
+.chance-bar {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-weight: bold;
+  font-size: 14px;
+  user-select: none;
+}
+.chance {
+  flex-grow: 1;
+  text-align: center;
+  padding: 6px 0;
+  border-radius: 6px;
+  color: #fff;
+  transition: width 0.5s ease;
+  /* Для визуального изменения ширины */
+}
+.chance.red {
+  background-color: #f66;
+}
+.chance.gem {
+  background: linear-gradient(45deg, #88f, #6cf);
+  box-shadow: 0 0 6px #6cf;
+}
+.chance.black {
+  background-color: #2f3144;
+}
+
+/* История слева, без фона, просто цветные квадраты */
+.history {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 800px;
+  justify-content: flex-start; /* Начинается слева */
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #6cf #222;
+}
+.history::-webkit-scrollbar {
+  height: 6px;
+}
+.history::-webkit-scrollbar-track {
+  background: transparent;
+}
+.history::-webkit-scrollbar-thumb {
+  background: #6cf;
+  border-radius: 3px;
+}
+.history-item {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.history-item.red { background: #f66; }
+.history-item.black { background: #2f3144; }
+.history-item.gem {
+  background: linear-gradient(45deg, #88f, #6cf);
+  box-shadow: 0 0 6px #6cf;
+}
+
+.roulette-container {
+  overflow: hidden;
+  width: 100%;
+  height: 100px;
+  background: #1a1c2d;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.roulette-strip {
+  display: flex;
+  position: absolute;
+  top: 10px;
+  left: 0;
+  height: 80px;
+  gap: 10px;
+  margin-left: 0;
+}
+
+.slot {
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.slot.red {
+  background: #f66;
+}
+.slot.black {
+  background: #2f3144;
+}
+.slot.gem {
+  background: linear-gradient(45deg, #88f, #6cf);
+  box-shadow: 0 0 8px #6cf;
+}
+
+.indicator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 4px;
+  height: 100%;
+  background: #fff;
+  transform: translateX(-50%);
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.bet-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+input[type="number"] {
+  width: 60px;
+  padding: 5px;
+  background: #2a2d3f;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  text-align: center;
+}
+button {
+  padding: 10px 20px;
+  font-size: 14px;
+  background: #2a2d3f;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+button:hover {
+  background: #3a3e56;
+}
+.balance {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 16px;
+}
+.result-box {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 18px;
+}
+
+/* Модальное окно */
+.modal-bg {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+.modal-bg.active {
+  display: flex;
+}
+.modal {
+  background: #1a1c2d;
+  border-radius: 15px;
+  padding: 20px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 80vh;
+  overflow-y: auto;
+  color: #fff;
+  box-shadow: 0 0 15px #6cf;
+  position: relative;
+}
+.modal h2 {
+  margin-top: 0;
+}
+.modal .close-btn {
+  position: absolute;
+  top: 10px; right: 15px;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  font-weight: bold;
+}
+/* История ставок в модалке */
+.modal-history-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  background: #0f111a;
+  border-radius: 10px;
+  padding: 10px;
+}
+.modal-history-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-bottom: 1px solid #2a2d3f;
+  font-size: 14px;
+}

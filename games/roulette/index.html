@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Рулетка</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0f111a;
+      font-family: Arial, sans-serif;
+      color: #fff;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .history {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #1a1c2d;
+      border-radius: 10px;
+      overflow-x: auto;
+    }
+    .history-item {
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .history-item.red { background: #f66; }
+    .history-item.black { background: #2f3144; }
+    .history-item.gem {
+      background: linear-gradient(45deg, #88f, #6cf);
+      box-shadow: 0 0 6px #6cf;
+    }
+
+    .roulette-container {
+      overflow: hidden;
+      width: 100%;
+      height: 100px;
+      background: #1a1c2d;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .roulette-strip {
+      display: flex;
+      position: absolute;
+      top: 10px;
+      left: 0;
+      height: 80px;
+      gap: 10px;
+      margin-left: 0;
+    }
+
+    .slot {
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    .slot.red {
+      background: #f66;
+    }
+    .slot.black {
+      background: #2f3144;
+    }
+    .slot.gem {
+      background: linear-gradient(45deg, #88f, #6cf);
+      box-shadow: 0 0 8px #6cf;
+    }
+
+    .indicator {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 4px;
+      height: 100%;
+      background: #fff;
+      transform: translateX(-50%);
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .bet-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 10px;
+      gap: 10px;
+    }
+    input[type="number"] {
+      width: 60px;
+      padding: 5px;
+      background: #2a2d3f;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      text-align: center;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 14px;
+      background: #2a2d3f;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #3a3e56;
+    }
+    .balance {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    .result-box {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="history" id="history"></div>
+    <div class="roulette-container">
+      <div class="roulette-strip" id="roulette"></div>
+      <div class="indicator"></div>
+    </div>
+    <div class="result-box" id="resultText">Сделайте ставку</div>
+
+    <div class="bet-controls">
+      <button onclick="setHalf()">½</button>
+      <input type="number" id="betAmount" value="1" min="1">
+      <button onclick="setDouble()">x2</button>
+    </div>
+
+    <div class="controls">
+      <button onclick="placeBet('red', 2)">BET x2 (Red)</button>
+      <button onclick="placeBet('black', 2)">BET x2 (Black)</button>
+      <button onclick="placeBet('gem', 19)">BET x19 (Gem)</button>
+    </div>
+
+    <div class="balance" id="balanceText">Баланс: 100₽</div>
+  </div>
+
+  <script>
+    const roulette = document.getElementById("roulette");
+    const resultText = document.getElementById("resultText");
+    const balanceText = document.getElementById("balanceText");
+    const history = document.getElementById("history");
+
+    const colors = [
+      'red', 'black', 'black', 'red', 'black', 'red', 'black', 'black', 'red', 'black',
+      'black', 'red', 'black', 'gem', 'black', 'red', 'black'
+    ];
+
+    let balance = parseInt(localStorage.getItem('balance')) || 100;
+    updateBalance();
+
+    function updateBalance() {
+      localStorage.setItem('balance', balance);
+      balanceText.innerText = `Баланс: ${balance}₽`;
+    }
+
+    function setHalf() {
+      let val = Math.floor(balance / 2);
+      document.getElementById("betAmount").value = val;
+    }
+
+    function setDouble() {
+      let val = parseInt(document.getElementById("betAmount").value) || 1;
+      document.getElementById("betAmount").value = val * 2;
+    }
+
+    function placeBet(betColor, multiplier) {
+      let bet = parseInt(document.getElementById("betAmount").value);
+      if (bet > balance || bet <= 0) {
+        alert("Недостаточно средств или ставка некорректна.");
+        return;
+      }
+
+      const winningColor = colors[Math.floor(Math.random() * colors.length)];
+      const fullStrip = [];
+
+      for (let i = 0; i < 20; i++) fullStrip.push(colors[Math.floor(Math.random() * colors.length)]);
+      fullStrip.push(winningColor);
+      for (let i = 0; i < 20; i++) fullStrip.push(colors[Math.floor(Math.random() * colors.length)]);
+
+      roulette.innerHTML = '';
+      fullStrip.forEach(color => {
+        const el = document.createElement('div');
+        el.className = 'slot ' + color;
+        roulette.appendChild(el);
+      });
+
+      const slotWidth = 90; // 80px + 10px gap
+      const targetIndex = 20;
+      const totalWidth = fullStrip.length * slotWidth;
+      const visibleWidth = document.querySelector(".roulette-container").offsetWidth;
+      const centerOffset = visibleWidth / 2 - slotWidth / 2;
+      const rollDistance = -(targetIndex * slotWidth - centerOffset);
+
+      roulette.style.transition = 'none';
+      roulette.style.transform = `translateX(0px)`;
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          roulette.style.transition = 'transform 3s cubic-bezier(0.22, 1, 0.36, 1)';
+          roulette.style.transform = `translateX(${rollDistance}px)`;
+        });
+      });
+
+      setTimeout(() => {
+        let message = '';
+        if (winningColor === betColor) {
+          let winAmount = bet * multiplier;
+          balance += winAmount;
+          message = `Выигрыш! ${winningColor.toUpperCase()} +${winAmount}₽`;
+        } else {
+          balance -= bet;
+          message = `Проигрыш. Выпало: ${winningColor.toUpperCase()} -${bet}₽`;
+        }
+        resultText.innerText = message;
+        updateBalance();
+        addHistory(winningColor);
+      }, 3200);
+    }
+
+    function addHistory(color) {
+      const el = document.createElement('div');
+      el.className = 'history-item ' + color;
+      history.insertBefore(el, history.firstChild);
+    }
+  </script>
+</body>
+</html>

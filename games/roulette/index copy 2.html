@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Рулетка</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+
+    <!-- Полоска с шансами -->
+    <div class="chance-bar" id="chanceBar">
+      <div class="chance red" id="chanceRed">Red: 33%</div>
+      <div class="chance gem" id="chanceGem">Gem: 33%</div>
+      <div class="chance black" id="chanceBlack">Black: 34%</div>
+    </div>
+
+    <!-- История результатов слева -->
+    <div class="history" id="history"></div>
+
+    <div class="roulette-container">
+      <div class="roulette-strip" id="roulette"></div>
+      <div class="indicator"></div>
+    </div>
+    <div class="result-box" id="resultText">Сделайте ставку</div>
+
+    <div class="bet-controls">
+      <button onclick="setHalf()">½</button>
+      <input type="number" id="betAmount" value="1" min="1" />
+      <button onclick="setDouble()">x2</button>
+    </div>
+
+    <div class="controls">
+      <button onclick="placeBet('red', 2)">BET x2 (Red)</button>
+      <button onclick="placeBet('black', 2)">BET x2 (Black)</button>
+      <button onclick="placeBet('gem', 19)">BET x19 (Gem)</button>
+    </div>
+
+    <button style="margin: 0 auto; display: block; margin-top: 10px;" onclick="openHistoryModal()">
+      Показать историю ставок
+    </button>
+
+    <div class="balance" id="balanceText">Баланс: 100₽</div>
+  </div>
+
+  <!-- Модальное окно -->
+  <div class="modal-bg" id="modalBg">
+    <div class="modal">
+      <button class="close-btn" onclick="closeHistoryModal()">×</button>
+      <h2>История ставок и результаты</h2>
+      <div class="modal-history-list" id="modalHistoryList"></div>
+      <canvas id="betChart" width="600" height="300"></canvas>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
