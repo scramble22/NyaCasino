@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Anime Slot Machine</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(to bottom right, #ffccf9, #f0bfff);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px 0;
+      user-select: none;
+    }
+    .game-container {
+      max-width: 600px;
+      width: 100%;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 15px;
+      box-shadow: 0 0 30px rgba(255, 105, 180, 0.6);
+    }
+    .header { text-align: center; }
+    .header h1 {
+      color: #d63384;
+      margin: 0 0 10px 0;
+      user-select: text;
+    }
+    .info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 10px;
+      padding: 10px 20px;
+      color: #333;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .info span, .info input {
+      color: #333;
+    }
+    #bet {
+      width: 70px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      text-align: center;
+      outline-offset: 2px;
+      transition: box-shadow 0.3s;
+    }
+    #bet:focus {
+      box-shadow: 0 0 8px 2px #ff70c0;
+    }
+    #spin {
+      background: #ff70c0;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 18px;
+      transition: transform 0.2s ease, background 0.3s;
+      user-select: none;
+    }
+    #spin:hover:enabled {
+      background: #ff40aa;
+      transform: scale(1.05);
+    }
+    #spin:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 6px;
+      margin-top: 25px;
+      justify-content: center;
+    }
+    .cell {
+      width: 100px;
+      height: 100px;
+      background: #ffc8e3;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      border: 2px solid #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 8px rgba(255, 105, 180, 0.5);
+      user-select: none;
+    }
+    .cell img {
+      width: 90%;
+      height: 90%;
+      object-fit: cover;
+      border-radius: 8px;
+      opacity: 1;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      position: relative;
+      will-change: transform, opacity;
+      pointer-events: none;
+      user-select: none;
+    }
+    .explode img {
+      animation: explode 0.5s forwards;
+    }
+    @keyframes explode {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(1.6) rotate(15deg); opacity: 0; }
+    }
+    .highlight {
+      animation: flash 0.6s ease-in-out 3;
+      filter: drop-shadow(0 0 8px #ff3ca6);
+    }
+    @keyframes flash {
+      0%, 100% { filter: drop-shadow(0 0 6px #ff3ca6); }
+      50% { filter: drop-shadow(0 0 16px #ff70c0); }
+    }
+    #winlog {
+      margin-top: 25px;
+      text-align: center;
+      color: #fff;
+      font-weight: 900;
+      font-size: 30px;
+      min-height: 34px;
+      transition: transform 0.3s ease;
+      user-select: text;
+      text-shadow: 0 0 8px #ff70c0;
+    }
+    .pulse-win {
+      animation: pulse 0.6s ease-in-out 3;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.4); color: #fff0f6; text-shadow: 0 0 12px #ff70c0; }
+      100% { transform: scale(1); color: #fff; text-shadow: 0 0 8px #ff70c0; }
+    }
+    #win-type {
+      font-size: 22px;
+      color: #fff;
+      margin-top: 8px;
+      text-align: center;
+      min-height: 28px;
+      font-weight: 700;
+      text-shadow: 0 0 8px #ff70c0;
+      user-select: text;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container" role="main" aria-label="Anime slot machine game">
+    <div class="header">
+      <h1>🎰 Anime Slots</h1>
+      <div class="info">
+        <span>💰 Balance: <span id="balance" aria-live="polite" aria-atomic="true"></span></span>
+        <span>🎯 Bet: <input type="number" id="bet" min="10" step="10" value="50" aria-label="Bet amount" /></span>
+        <button id="spin" aria-label="Spin the reels">SPIN!</button>
+      </div>
+    </div>
+    <div id="slot-grid" class="grid" aria-live="polite" aria-atomic="true"></div>
+    <div id="winlog" aria-live="polite" aria-atomic="true"></div>
+    <div id="win-type" aria-live="polite" aria-atomic="true"></div>
+  </div>
+
+  <script>
+    (() => {
+      const grid = document.getElementById('slot-grid');
+      const balanceEl = document.getElementById('balance');
+      const betInput = document.getElementById('bet');
+      const spinBtn = document.getElementById('spin');
+      const winlog = document.getElementById('winlog');
+      const winType = document.getElementById('win-type');
+
+      const rows = 3;
+      const cols = 5;
+
+      // Символы (у тебя должны быть картинки в папке img/1.jpg ... img/9.jpg)
+      const symbols = Array.from({ length: 9 }, (_, i) => `img/${i + 1}.jpg`);
+      let gridData = [];
+      let sessionWin = 0;
+
+      // Баланс из localStorage или старт 1000
+      let balance = parseInt(localStorage.getItem('balance')) || 1000;
+      balanceEl.textContent = balance;
+
+      // Создаем начальное поле
+      function createGrid() {
+        grid.innerHTML = '';
+        gridData = [];
+        for (let r = 0; r < rows; r++) {
+          let row = [];
+          for (let c = 0; c < cols; c++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            const img = document.createElement('img');
+            const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+            img.src = symbol;
+            img.alt = `Anime symbol`;
+            cell.appendChild(img);
+            grid.appendChild(cell);
+            row.push({ element: cell, symbol });
+          }
+          gridData.push(row);
+        }
+      }
+
+      // Анимация вращения одного барабана с задержкой и плавной остановкой
+      function animateReelSpin(column, finalSymbols, duration) {
+        return new Promise(resolve => {
+          const reelCells = [];
+          for (let r = 0; r < rows; r++) {
+            const cell = grid.querySelector(`.cell:nth-child(${r * cols + column + 1})`);
+            reelCells.push(cell);
+          }
+
+          const spinSpeed = 50;
+          let elapsed = 0;
+
+          const interval = setInterval(() => {
+            elapsed += spinSpeed;
+
+            reelCells.forEach(cell => {
+              const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+              cell.innerHTML = `<img src="${randomSymbol}" alt="Anime symbol">`;
+            });
+
+            if (elapsed >= duration) {
+              clearInterval(interval);
+              // Финальные символы
+              for (let r = 0; r < rows; r++) {
+                reelCells[r].innerHTML = `<img src="${finalSymbols[r]}" alt="Anime symbol">`;
+                gridData[r][column] = { symbol: finalSymbols[r], element: reelCells[r] };
+              }
+              resolve();
+            }
+          }, spinSpeed);
+        });
+      }
+
+      // Запуск анимации для всех барабанов с задержкой старта
+      async function spinReels(finalSymbolsPerColumn) {
+        const baseDuration = 1000;
+        const promises = [];
+        for (let c = 0; c < cols; c++) {
+          const p = new Promise(res => {
+            setTimeout(() => {
+              animateReelSpin(c, finalSymbolsPerColumn[c], baseDuration + c * 500).then(res);
+            }, c * 300);
+          });
+          promises.push(p);
+        }
+        await Promise.all(promises);
+      }
+
+      // Генерация финальных символов для каждого столбца
+      function generateFinalSymbols() {
+        let final = [];
+        for (let c = 0; c < cols; c++) {
+          let colSymbols = [];
+          for (let r = 0; r < rows; r++) {
+            colSymbols.push(symbols[Math.floor(Math.random() * symbols.length)]);
+          }
+          final.push(colSymbols);
+        }
+        return final;
+      }
+
+      // Поиск кластеров одинаковых символов (4-связный DFS)
+      function findMatches() {
+        let matches = [];
+        const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
+
+        function dfs(r, c, sym, cluster) {
+          if (r < 0 || c < 0 || r >= rows || c >= cols) return;
+          if (visited[r][c]) return;
+          if (gridData[r][c].symbol !== sym) return;
+
+          visited[r][c] = true;
+          cluster.push([r, c]);
+
+          dfs(r + 1, c, sym, cluster);
+          dfs(r - 1, c, sym, cluster);
+          dfs(r, c + 1, sym, cluster);
+          dfs(r, c - 1, sym, cluster);
+        }
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (!visited[r][c]) {
+              let cluster = [];
+              dfs(r, c, gridData[r][c].symbol, cluster);
+              if (cluster.length >= 3) {
+                matches.push(cluster);
+              }
+            }
+          }
+        }
+        return matches;
+      }
+
+      // Анимация взрыва для группы ячеек
+      async function animateExplosion(cells) {
+        cells.forEach(([r, c]) => {
+          const cell = gridData[r][c].element;
+          cell.classList.add('explode');
+        });
+        await new Promise(res => setTimeout(res, 500));
+        cells.forEach(([r, c]) => {
+          const cell = gridData[r][c].element;
+          cell.classList.remove('explode');
+          cell.innerHTML = '';
+          gridData[r][c].symbol = null;
+        });
+      }
+
+      // Упадок символов сверху на освободившиеся места с анимацией падения
+      async function animateFall() {
+        for (let c = 0; c < cols; c++) {
+          let columnSymbols = [];
+          // Собираем все существующие символы сверху вниз (игнорируем пустые)
+          for (let r = rows - 1; r >= 0; r--) {
+            if (gridData[r][c].symbol) {
+              columnSymbols.push(gridData[r][c].symbol);
+            }
+          }
+          // Определяем сколько нужно добавить новых сверху
+          const missing = rows - columnSymbols.length;
+
+          // Поднимаем существующие символы внизу (только если изменились)
+          for (let i = 0; i < columnSymbols.length; i++) {
+            const targetRow = rows - 1 - i;
+            if (gridData[targetRow][c].symbol === columnSymbols[i]) {
+              // Символ тот же, анимацию не делаем
+              continue;
+            }
+            const cell = gridData[targetRow][c].element;
+            cell.innerHTML = `<img src="${columnSymbols[i]}" alt="Anime symbol">`;
+            gridData[targetRow][c].symbol = columnSymbols[i];
+            const img = cell.querySelector('img');
+
+            img.style.transition = 'none';
+            img.style.transform = 'translateY(-150px)';
+            img.style.opacity = '0';
+            void img.offsetWidth;
+            img.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s';
+            img.style.transform = 'translateY(0)';
+            img.style.opacity = '1';
+            await new Promise(r => setTimeout(r, 70));
+          }
+
+          // Добавляем новые символы сверху с анимацией падения
+          for (let i = 0; i < missing; i++) {
+            const targetRow = i;
+            const cell = gridData[targetRow][c].element;
+            const sym = symbols[Math.floor(Math.random() * symbols.length)];
+            cell.innerHTML = `<img src="${sym}" alt="Anime symbol">`;
+            gridData[targetRow][c].symbol = sym;
+            const img = cell.querySelector('img');
+
+            img.style.transition = 'none';
+            img.style.transform = 'translateY(-150px)';
+            img.style.opacity = '0';
+            void img.offsetWidth;
+            img.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s';
+            img.style.transform = 'translateY(0)';
+            img.style.opacity = '1';
+            await new Promise(r => setTimeout(r, 70));
+          }
+        }
+      }
+
+      // Подсчет выигрыша за группу символов
+      function calculateWin(matches, bet) {
+        let totalWin = 0;
+        let types = new Set();
+
+        for (const cluster of matches) {
+          if (cluster.length >= 3) {
+            const symbol = gridData[cluster[0][0]][cluster[0][1]].symbol;
+            types.add(symbol);
+            totalWin += cluster.length * bet;
+          }
+        }
+
+        return { totalWin, types: Array.from(types) };
+      }
+
+      // Главная функция запуска игры
+      async function startGame() {
+        const bet = parseInt(betInput.value);
+        if (isNaN(bet) || bet < 10) {
+          alert('Минимальная ставка 10');
+          return;
+        }
+        if (bet > balance) {
+          alert('Недостаточно средств на балансе');
+          return;
+        }
+        spinBtn.disabled = true;
+        betInput.disabled = true;
+        winlog.textContent = '';
+        winType.textContent = '';
+        sessionWin = 0;
+
+        // Списываем ставку
+        balance -= bet;
+        updateBalance();
+
+        // Генерируем финальные символы для каждой колонки
+        const finalSymbolsPerColumn = generateFinalSymbols();
+
+        // Запускаем анимацию вращения
+        await spinReels(finalSymbolsPerColumn);
+
+        // Ищем совпадения
+        let matches = findMatches();
+
+        if (matches.length === 0) {
+          //winlog.textContent = 'Увы, нет выигрышных комбинаций 😢';
+          spinBtn.disabled = false;
+          betInput.disabled = false;
+          return;
+        }
+
+        let totalWin = 0;
+        let chain = 0;
+
+        // Цикл каскадных взрывов
+        while (matches.length > 0) {
+          chain++;
+          // Подсчёт выигрыша
+          const { totalWin: win, types } = calculateWin(matches, bet);
+          totalWin += win;
+
+          // Показываем выигрыш
+          winlog.textContent = `${chain}: +${win} ₽`;
+          winlog.classList.add('pulse-win');
+          setTimeout(() => winlog.classList.remove('pulse-win'), 1800);
+          //winType.textContent = `${matches.map(m => m.length).join(', ')}`;
+
+          // Анимация взрыва и удаление символов
+          for (const cluster of matches) {
+            await animateExplosion(cluster);
+          }
+
+          // Падение символов сверху
+          await animateFall();
+
+          // Ищем новые совпадения
+          matches = findMatches();
+        }
+
+        sessionWin = totalWin;
+
+        if (sessionWin > 0) {
+          winlog.textContent = `won ${sessionWin} ₽ `;
+          balance += sessionWin;
+          updateBalance();
+        }
+
+        spinBtn.disabled = false;
+        betInput.disabled = false;
+      }
+
+      function updateBalance() {
+        balanceEl.textContent = balance;
+        localStorage.setItem('balance', balance);
+      }
+
+      // Инициализация
+      createGrid();
+
+      // Привязка обработчиков
+      spinBtn.addEventListener('click', startGame);
+
+      betInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          startGame();
+        }
+      });
+
+    })();
+  </script>
+</body>
+</html>

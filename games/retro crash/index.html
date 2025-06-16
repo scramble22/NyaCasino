@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crash Retro</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    body {
+      margin: 0;
+      background: black;
+      color: limegreen;
+      font-family: 'Press Start 2P', cursive;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .screen {
+      background: #111;
+      border: 4px solid limegreen;
+      width: 80%;
+      height: 60%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 0 30px limegreen;
+    }
+
+    .multiplier {
+      font-size: 3rem;
+      animation: glow 0.2s infinite alternate;
+      text-align: center;
+    }
+
+    .multiplier.crashed {
+      font-size: 3rem;
+      animation: glow-2 0.2s infinite alternate;
+      text-align: center;
+    }
+
+    #resultText {
+      margin-top: 10px;
+      font-size: 1rem;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 5px limegreen; }
+      to { text-shadow: 0 0 20px limegreen; }
+    }
+
+    @keyframes glow-2 {
+      from { text-shadow: 0 0 5px rgb(255, 0, 0); }
+      to { text-shadow: 0 0 20px rgb(255, 0, 0); }
+    }
+
+    .crashed {
+      color: red;
+      text-shadow: 0 0 15px red;
+    }
+
+    .balance {
+      margin-top: 20px;
+      font-size: 1rem;
+    }
+
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    input {
+      background: black;
+      color: limegreen;
+      border: 2px solid limegreen;
+      padding: 5px 10px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.8rem;
+      width: 120px;
+      text-align: center;
+    }
+
+    .btns {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    button {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.8rem;
+      background: black;
+      color: limegreen;
+      border: 2px solid limegreen;
+      padding: 10px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: limegreen;
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <div class="screen">
+    <div class="multiplier" id="multiplier">x1.00</div>
+    <div id="resultText"></div>
+  </div>
+
+  <div class="balance">💰 Balance: <span id="balance">100</span>₽</div>
+
+  <div class="controls">
+    <div class="input-group">
+      <label for="betInput">💸 BET</label>
+      <input type="number" id="betInput" value="10" min="1" step="1">
+      <div style="margin-top:10px">
+        <button onclick="halfBet()">½</button>
+        <button onclick="doubleBet()">x2</button>
+      </div>
+    </div>
+
+    <div class="btns">
+      <button id="actionButton" onclick="handleAction()">🚀 BET</button>
+    </div>
+  </div>
+
+  <script>
+    let balance = parseFloat(localStorage.getItem('balance')) || 100;
+    let isRunning = false;
+    let multiplier = 1.00;
+    let crashPoint = 0;
+    let interval;
+    let baseSpeed = 50;
+    let isPostCashout = false;
+
+    const balanceEl = document.getElementById('balance');
+    const multiplierEl = document.getElementById('multiplier');
+    const resultText = document.getElementById('resultText');
+    const betInput = document.getElementById('betInput');
+    const actionButton = document.getElementById('actionButton');
+
+    function updateBalance() {
+      balanceEl.textContent = balance.toFixed(2);
+      localStorage.setItem('balance', balance);
+    }
+
+    function halfBet() {
+      betInput.value = Math.max(1, Math.floor(betInput.value / 2));
+    }
+
+    function doubleBet() {
+      betInput.value = Math.floor(betInput.value * 2);
+    }
+
+    function handleAction() {
+      if (isRunning) {
+        cashOut();
+      } else {
+        startGame();
+      }
+    }
+
+    function startGame() {
+      const betAmount = parseFloat(betInput.value);
+      if (isRunning || isNaN(betAmount) || betAmount <= 0 || balance < betAmount) return;
+
+      isRunning = true;
+      isPostCashout = false;
+      balance -= betAmount;
+      updateBalance();
+      multiplier = 1.00;
+
+      // Псевдореалистичная система краша
+      const rand = Math.random();
+      if (rand < 0.2) crashPoint = (Math.random() * 0.2 + 1.01).toFixed(2);
+      else if (rand < 0.5) crashPoint = (Math.random() * 1.5 + 1.2).toFixed(2);
+      else if (rand < 0.9) crashPoint = (Math.random() * 5 + 1.5).toFixed(2);
+      else crashPoint = (Math.random() * 50 + 10).toFixed(2); // шанс заноса
+
+      multiplierEl.classList.remove('crashed');
+      resultText.textContent = '';
+      actionButton.textContent = '💸 CASH OUT';
+
+      let speed = baseSpeed;
+
+      function step() {
+        multiplier += 0.01;
+        multiplierEl.textContent = `x${multiplier.toFixed(2)}`;
+        speed = baseSpeed - Math.min(45, multiplier * 3);
+
+        if (multiplier >= crashPoint && !isPostCashout) {
+          crash();
+        } else {
+          clearInterval(interval);
+          interval = setInterval(step, Math.max(5, speed));
+        }
+      }
+
+      interval = setInterval(step, speed);
+    }
+
+    function crash() {
+      clearInterval(interval);
+      isRunning = false;
+      multiplierEl.classList.add('crashed');
+      multiplierEl.textContent = `💥 x${multiplier.toFixed(2)} CRASHED!`;
+      resultText.textContent = '';
+      actionButton.textContent = '🚀 BET';
+    }
+
+    function cashOut() {
+      clearInterval(interval);
+      const betAmount = parseFloat(betInput.value);
+      const won = betAmount * multiplier;
+      balance += won;
+      updateBalance();
+      isPostCashout = true;
+      isRunning = false;
+      multiplierEl.classList.remove('crashed');
+      multiplierEl.textContent = `✅ x${multiplier.toFixed(2)} CASHED!`;
+      resultText.textContent = `+${won.toFixed(2)}₽`;
+      actionButton.textContent = '🚀 BET';
+
+      // Подождать 500 мс и резко долететь до конца
+      setTimeout(() => {
+        let fastInterval = setInterval(() => {
+          multiplier += 0.10;
+          multiplierEl.textContent = `x${multiplier.toFixed(2)}`;
+          if (multiplier >= crashPoint) {
+            clearInterval(fastInterval);
+            multiplierEl.classList.add('crashed');
+            multiplierEl.textContent = `💥 x${multiplier.toFixed(2)} CRASHED!`;
+          }
+        }, 15);
+      }, 500);
+    }
+
+    updateBalance();
+  </script>
+</body>
+</html>
